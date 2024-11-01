@@ -1,7 +1,7 @@
-import time
+#import time
 import gym
 import numpy as np
-import torchvision.transforms as T
+#import torchvision.transforms as T
 from gym import spaces
 from torchmetrics import PeakSignalNoiseRatio
 from torchmetrics.functional import mean_squared_error
@@ -165,7 +165,7 @@ class CustomEnv(gym.Env):
      self.offset=self.tempoffset
     def eval(self):
      self.train=False
-     self.tempoffset=serlf.offset
+     self.tempoffset=self.offset
      self.offset = self.interval[0] - 60
      
 
