@@ -1,5 +1,5 @@
 import numpy as np
-from pypfm import PFMLoader
+from .custom_pypfm import PFMLoader
 from PIL import Image
 import os
 
