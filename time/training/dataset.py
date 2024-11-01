@@ -1,10 +1,11 @@
 import numpy as np
 
 import torch
-from torch.utils.data import Dataset
-import torchvision.transforms as T
 
-t = T.Resize((1080, 1920))
+#from torch.utils.data import Dataset
+#import torchvision.transforms as T
+#t = T.Resize((1080, 1920))
+# should not be needed
 
 ## -----------------------------------------------------------------------------
 ## Training dataset
@@ -45,23 +46,25 @@ gets the specified additional feature given strings that describe frame number a
 
 
 def get_add(a, b, c):
-    if b == "UVUV":
-        b = "00UVUV"
+    #if b == "UVUV":
+    #    b = "00UVUV"
     image = Image.open(a + b + c)
-    if np.array(image).shape[:2] == (720, 1280):
-        image = t(image)
+    #if np.array(image).shape[:2] == (720, 1280):
+    #    image = t(image)
     z = np.array(image)[:720, :720]
-    temp = [np.sum(z[:, :, i]) for i in range(3)]
-    if b == (2 * "Denoising Depth"):
+    #temp = [np.sum(z[:, :, i]) for i in range(3)]
+    if b == ("Depth"):
         z = z[:, :, 0:1]
-    b = np.min(z)
-    a = np.max(z)
-    if b == a:
-        a = a if a else 1.0
-        return z / a
+    z_min = np.min(z)
+    z_max = np.max(z)
+    if z_min == z_max:
+        z_max = z_max if z_max else 1.0
+        return z / z_max
+        # return either 1 (if source is not 0) or 0 (source is 0) do we want this?
     else:
-        return (z - b) / (a - b) * 1.0
-
+        return (z - z_min) / (z_max - z_min) * 1.0 
+        # normalize to [0,1] (assuming source is >= 0 witch it is from png) 
+        # todo check: this seens to normalize individual textur, do we really want that?
 
 """
 gets all additional features for the given frame number
@@ -75,8 +78,8 @@ def get_aux(path, frame_number):
     end = str(frame_number).zfill(4) + ".png"
     imgs = np.concatenate(
         [
-            get_add(f, 2 * g, end)
-            for g in ["Denoising Normal", "Denoising Albedo", "Denoising Depth"]  # \
+            get_add(f, g, end)
+            for g in ["Normal", "Albedo", "Depth"]  # \
         ],
         -1,
     )
@@ -91,7 +94,7 @@ Caching makes the code faster
 
 @functools.lru_cache(maxsize=cs)
 def get_flow(path, frame_number):
-    a = path + str(frame_number).zfill(4) + "corr.pt"
+    a = path + "add/Motion" + str(frame_number).zfill(4) + ".pt"
     return torch.load(a)[:, :720, :720]
 
 
@@ -102,13 +105,13 @@ class of the main dataset
 
 class Dataset():  # Todo rename validation dataset to something else
     def __init__(self):
-        self.path = "/home/ascardigli/blender-3.2.2-linux-x64/suntemple/"
-        self.path2 = "/home/ascardigli/blender-3.2.2-linux-x64/zeroday/"
-        self.path3 = "/home/ascardigli/blender-3.2.2-linux-x64/emerald/"
-        self.path4 = "/home/ascardigli/blender-3.2.2-linux-x64/bubble/"
+        self.path = "D:/rl_dataset"
+        #self.path2 = "/home/ascardigli/blender-3.2.2-linux-x64/zeroday/"
+        #self.path3 = "/home/ascardigli/blender-3.2.2-linux-x64/emerald/"
+        #self.path4 = "/home/ascardigli/blender-3.2.2-linux-x64/bubble/"
         sampling = torch.arange(1, 9).reshape(8, 1, 1, 1).cuda(0)
         self.sampling = sampling.repeat(1, 1, 720, 720)
-        self.num_images = 3500
+        self.num_images = 60
         self.bb = torch.Tensor(np.tile(np.arange(720), (720, 1))).cuda(0)
         self.aa = torch.Tensor(np.tile(np.arange(720).T, (720, 1)).T).cuda(0)
 
@@ -144,20 +147,20 @@ class Dataset():  # Todo rename validation dataset to something else
         if i <= 3000:
             return self.path3  # emerald has 1400 images
         """
-        return self.path4
+        return self.path
 
     """
   Changes scene index as function of frame index
   """
-
     def get_i(self, i):
-        if i <= 1200:
-            return i
-        if i <= 1600:
-            return i - 1200
-        if i <= 3000:
-            return i - 1600
-        return i - 3000
+        return i
+        #if i <= 1200:
+        #    return i
+        #if i <= 1600:
+        #    return i - 1200
+        #if i <= 3000:
+        #    return i - 1600
+        #return i - 3000
 
     """
   Uses the motion vector to warp the given tensor
