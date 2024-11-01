@@ -3,7 +3,7 @@ import os
 path = "D:/GitRepos/rl-path-tracing/datasets/SunTemple_v4/SunTemple/SunTemple.blend"
 #todo other scene and additional frames
 #len = 1201
-len = 2
+len = 5
 
 import torch
 import numpy as np
@@ -13,27 +13,68 @@ import minexr
 def store_flow(path,out):    
     with open(path, 'rb') as fp:
       reader = minexr.load(fp)
-      data = reader.select(['R','G','B','A'])
+      data = reader.select(['R','G','B'])
   
-    print(np.array(data).shape)
-    data = torch.Tensor(np.array(data))[:720,:720]
-    print(torch.min(data))
-    a=720
-    b=720
-    bb = torch.Tensor(np.tile(np.arange(b),(720,1)))
-    aa = torch.Tensor(np.tile(np.arange(a).T,(720,1)).T)
-    data[:,:,0] = torch.Tensor((data[:,:,0]*(2)+bb*2-b+1)/b)
-    data[:,:,1] = torch.Tensor((-data[:,:,1]*(2) +aa*2-a+1)/a)
+    #we want to express the motion vector so it can be fed to https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
+    #in translation(self, i, data, transform=None) from dataset.py
+    #grid_sample need a POSITION normalized as [-1,1],[-1,1] top left being 0,0
+    #while blender provide pixels based motion vector [-xres,xres],[-yres,yres] BOTTOM left being 0,0
+
+    xres=720
+    yres=720
+    print('motion flow input shape from exr : ' + str(np.array(data).shape))
+    data = torch.Tensor(np.array(data))[:xres,:yres]
+
+    #this convert U motion from pixels [-xres, xres] to [-1,1] UV space with top left being 0,0
+    data[:,:,0] = data[:,:,0]/xres
+    
+    #this convert V motion from pixels [-yres, yres] to [-1,1] UV space with top left being 0,0
+    data[:,:,1] = -data[:,:,0]/yres
+
+    #print('motion flow min value from exr : ' + str(torch.min(data)))
+    #print('motion flow max value from exr : ' + str(torch.max(data)))
+    
+    xres_position = torch.Tensor(np.tile(np.arange(xres),(xres,1)))
+    # buffer like this
+    # 0 1 2 3 4 ... xres
+    # 0 1 2 3 4 ... xres
+    # ...
+    xres_position = (xres_position*2-xres+1)/xres
+    # buffer like this
+    # -1.0 -0.99 .. 1.0
+    # -1.0 -0.99 .. 1.0
+    # ...
+
+    yres_position = torch.Tensor(np.tile(np.arange(yres).T,(yres,1)).T)
+    yres_position = (yres_position*2-yres+1)/yres
+    #same but for the V/Y direction
+
+    #this convert from a motion vector [-1,1],[-1, 1] top left [0,0] bottom right [1,1]
+    #to a position to fetch normalized as [-1,1] top left being [-1,-1]
+    data[:,:,0] = torch.Tensor(data[:,:,0]*2+xres_position)
+    data[:,:,1] = torch.Tensor(data[:,:,1]*2+yres_position) 
 
     flow =  (torch.Tensor(data)[:,:,[0,1]].unsqueeze(0))
     torch.save(flow,out)
+
+    #initial code:
+    #print(np.array(data).shape)
+    #data = torch.Tensor(np.array(data))[:720,:720]
+    #print(torch.min(data))
+    #a=720
+    #b=720
+    #bb = torch.Tensor(np.tile(np.arange(b),(720,1)))
+    #aa = torch.Tensor(np.tile(np.arange(a).T,(720,1)).T)
+    #data[:,:,0] = torch.Tensor((data[:,:,0]*(2)+bb*2-b+1)/b)
+    #data[:,:,1] = torch.Tensor((-data[:,:,1]*(2) +aa*2-a+1)/a)
+
     print(path)
 
 motion_vector_file_path = 'd:/rl_dataset/add/Motion'
 
 for i in range(0,len):
     print("* generate_gd: individual samples and ground truth ******************************")
-    os.system("blender "+ path +" --background --python generate_gd.py -- " +str(i) )   
+    os.system("blender "+ path +" --background --python generate_gd.py -- " +str(i) )
 
     print("* generate_add: normal, depth, albedo and motion vector as exr ******************")
     os.system("blender "+ path +" --background --python generate_add.py -- " +str(i))
