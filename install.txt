@@ -8,10 +8,10 @@ pip install tabulate
 pip install scikit-image
 pip install torchmetrics
 pip install lz4
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 pip install pytorch-msssim
 pip install minexr
 pip install bpy
-pip install torchvision
 pip install tqdm
 
 # missing dependancies (not installing atm) pip install pypfm
