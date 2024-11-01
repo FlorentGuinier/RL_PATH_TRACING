@@ -3,14 +3,13 @@
 # as well as num_individual_sample images of 1 sample each, using a different seed each.
 # the scene need to be preconfigured to use cycle as a blender renderer
 
-num_samples_for_ground_truth = 1000
+num_samples_for_ground_truth = 64
 num_individual_sample = 8
 base_path = 'D:/rl_dataset'
 
+import bpy
 import sys
 j= int(sys.argv[-1])
-
-import bpy
 
 scene = bpy.context.scene
 bpy.context.scene.render.image_settings.color_mode ='RGB'
@@ -44,16 +43,11 @@ def enable_gpus(device_type, use_cpus=False):
 
     return activated_gpus
 
-render = bpy.context.scene.render
-render.image_settings.color_mode = 'RGBA' 
-render.film_transparent = True
-#render.use_compositing = True #do we need this?
-nodes = bpy.context.scene.node_tree.nodes
-render_layers = nodes.new('CompositorNodeRLayers')
-
 enable_gpus("CUDA")
+bpy.context.scene.use_nodes = False
 bpy.context.scene.cycles.use_denoising = False
 bpy.context.scene.cycles.use_preview_denoising=False
+
 for frame in range(j, (j+1)):
   scene.frame_set(frame) 
   bpy.context.scene.cycles.device = 'GPU'

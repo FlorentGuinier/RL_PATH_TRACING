@@ -1,65 +1,58 @@
 # This script generate 
-# the normal, depth and albedo map
-# the motion vector
-# the scene need to be preconfigured to use cycle as a blender renderer
+# the albedo, normal, depth and motion vector
+# albedo is RGB [0,1] png
+# normal is RGB [0,1] png a remapping from [-1,1]
+# depth is RGB [0,1] png a remapping from world space [0m,25m] (WIP completely arbitrary choice for now)
+# motion vector is RGB float32 openEXR uncompressed
+# for this the scene need to be preconfigured to use cycle and with the compositor nodes as seeb ub blend_config_for_add_buffers.png
 
-import sys
-frame_number = int(sys.argv[-1])
-         
+base_path = 'D:/rl_dataset'
+
 import bpy
+import sys
+j= int(sys.argv[-1])
 
-render = bpy.context.scene.render
-render.image_settings.color_mode = 'RGBA' 
-render.film_transparent = True
-#render.use_compositing = True #do we need this?
-nodes = bpy.context.scene.use_nodes = True
-nodes = bpy.context.scene.node_tree.nodes
-links = bpy.context.scene.node_tree.links
-render_layers = nodes.new('CompositorNodeRLayers')
+scene = bpy.context.scene
+bpy.context.scene.render.image_settings.color_mode ='RGB'
+bpy.context.scene.render.image_settings.file_format='PNG'
+bpy.context.scene.render.filepath = base_path
+prefs = bpy.context.preferences.addons['cycles'].preferences
+prefs.compute_device_type = 'CUDA'
+prefs.compute_device = 'CUDA_0'
+bpy.ops.wm.save_userpref()
 
-bpy.context.scene.render.filepath = 'd:/rl_dataset/add/'
-motion_vector_file_path = bpy.context.scene.render.filepath+'Motion'
+def enable_gpus(device_type, use_cpus=False):
+    preferences = bpy.context.preferences
+    cycles_preferences = preferences.addons["cycles"].preferences
+    cycles_preferences.refresh_devices()
+    devices = cycles_preferences.devices
 
-for a in render_layers.outputs.keys():
-    if str(a) == "Denoising Depth" or str(a) == "Denoising Normal" or str(a) == "Denoising Albedo":
-        file_output = nodes.new(type="CompositorNodeOutputFile")
-        file_output.label = str(a) + " Output"
-        file_output.base_path = ''
-        file_output.file_slots[0].use_node_format = True
-        file_output.format.file_format = 'OPEN_EXR'
-        file_output.format.color_mode = 'RGB'
-        file_output.format.color_depth = '32'
-        file_output.format.compression = 0
-        file_output.format.exr_codec = 'NONE'
-        #file_output.format.file_format = 'PNG'
-        #file_output.format.color_mode = 'RGB'
-        #file_output.format.color_depth = '16'
-        file_output.file_slots[0].path = bpy.context.scene.render.filepath+ str(a)
-        links.new(render_layers.outputs[a], file_output.inputs[0])
+    if not devices:
+        raise RuntimeError("Unsupported device type")
 
-    if str(a) == "Vector":
-        separate_color = nodes.new(type="CompositorNodeSeparateColor")
-        separate_color.label = 'Separate color'
-        links.new(render_layers.outputs[a], separate_color.inputs[0])
+    activated_gpus = []
+    for device in devices:
+        if device.type == "CPU":
+            device.use = use_cpus
+        else:
+            device.use = True
+            activated_gpus.append(device.name)
+            print('activated gpu', device.name)
 
-        combine_color = nodes.new(type="CompositorNodeCombineColor")
-        combine_color.label = 'Combine color'
-        links.new(separate_color.outputs[0], combine_color.inputs[0])
-        links.new(separate_color.outputs[1], combine_color.inputs[1])
-        links.new(separate_color.outputs[2], combine_color.inputs[2])
-        links.new(separate_color.outputs[3], combine_color.inputs[3])
+    cycles_preferences.compute_device_type = device_type
+    bpy.context.scene.cycles.device = "GPU"
 
-        file_output = nodes.new(type="CompositorNodeOutputFile")
-        file_output.label = 'Motion Vector Output'
-        file_output.base_path = ''
-        file_output.file_slots[0].use_node_format = True
-        file_output.format.file_format = 'OPEN_EXR'
-        file_output.format.color_mode = 'RGBA'
-        file_output.format.color_depth = '32'
-        file_output.format.compression = 0
-        file_output.format.exr_codec = 'NONE'
-        file_output.file_slots[0].path = motion_vector_file_path
-        links.new(combine_color.outputs[0], file_output.inputs[0])
+    return activated_gpus
 
-bpy.context.scene.frame_set(frame_number*10)   
-bpy.ops.render.render(write_still=False)
+enable_gpus("CUDA")
+bpy.context.scene.use_nodes = True
+bpy.context.scene.cycles.use_denoising = False
+bpy.context.scene.cycles.use_preview_denoising=False
+
+for frame in range(j, (j+1)):
+  scene.frame_set(frame) 
+  bpy.context.scene.cycles.device = 'GPU'
+  bpy.context.scene.cycles.samples = 1
+  bpy.ops.render.render(write_still=False)
+      
+      

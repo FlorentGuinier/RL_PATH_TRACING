@@ -3,7 +3,7 @@ import os
 path = "D:/GitRepos/rl-path-tracing/datasets/SunTemple_v4/SunTemple/SunTemple.blend"
 #todo other scene and additional frames
 #len = 1201
-len = 1
+len = 2
 
 import torch
 import numpy as np
@@ -41,3 +41,4 @@ for i in range(0,len):
     print("* convert motion vector to torch format *****************************************")
     frame_number_str = str(i).zfill(4)
     store_flow(motion_vector_file_path+frame_number_str+".exr",motion_vector_file_path+frame_number_str+".pt")
+    
