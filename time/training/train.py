@@ -60,7 +60,7 @@ def main_worker(inp=31, ic=32, mode=None, conf="111"):
     lr_scheduler = optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=5e-05,
-        total_steps=10 * 200 * 100,
+        total_steps=10 * 60 # #10 * 200 * 100,
         pct_start=0.15,
         anneal_strategy="cos",
         div_factor=(25.0),
