@@ -12,6 +12,7 @@ pip install pytorch-msssim
 pip install minexr
 pip install bpy
 pip install torchvision
+pip install tqdm
 
 # missing dependancies (not installing atm) pip install pypfm
 
