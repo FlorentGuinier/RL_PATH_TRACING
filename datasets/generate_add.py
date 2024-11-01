@@ -12,6 +12,7 @@ render = bpy.context.scene.render
 render.image_settings.color_mode = 'RGBA' 
 render.film_transparent = True
 #render.use_compositing = True #do we need this?
+nodes = bpy.context.scene.use_nodes = True
 nodes = bpy.context.scene.node_tree.nodes
 links = bpy.context.scene.node_tree.links
 render_layers = nodes.new('CompositorNodeRLayers')
@@ -25,9 +26,14 @@ for a in render_layers.outputs.keys():
         file_output.label = str(a) + " Output"
         file_output.base_path = ''
         file_output.file_slots[0].use_node_format = True
-        file_output.format.file_format = 'PNG'
+        file_output.format.file_format = 'OPEN_EXR'
         file_output.format.color_mode = 'RGB'
-        file_output.format.color_depth = '16'
+        file_output.format.color_depth = '32'
+        file_output.format.compression = 0
+        file_output.format.exr_codec = 'NONE'
+        #file_output.format.file_format = 'PNG'
+        #file_output.format.color_mode = 'RGB'
+        #file_output.format.color_depth = '16'
         file_output.file_slots[0].path = bpy.context.scene.render.filepath+ str(a)
         links.new(render_layers.outputs[a], file_output.inputs[0])
 
@@ -50,8 +56,10 @@ for a in render_layers.outputs.keys():
         file_output.format.file_format = 'OPEN_EXR'
         file_output.format.color_mode = 'RGBA'
         file_output.format.color_depth = '32'
+        file_output.format.compression = 0
+        file_output.format.exr_codec = 'NONE'
         file_output.file_slots[0].path = motion_vector_file_path
         links.new(combine_color.outputs[0], file_output.inputs[0])
 
-bpy.context.scene.frame_set(frame_number)   
+bpy.context.scene.frame_set(frame_number*10)   
 bpy.ops.render.render(write_still=False)
