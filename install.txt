@@ -14,10 +14,12 @@ pip install minexr
 pip install bpy
 pip install tqdm
 pip install tensorboardX
+pip install gputils
 
 
-# missing dependancies (not installing atm, custom code was added to reop insted to read pfm): pip install pypfm
+# missing dependancies (not installing atm, custom code was added to read pfm instaed of the package see custom_pypfm.py): pip install pypfm
 
+# The info below was for ray[rllib] 2.0.0 may or may not be relevant for ray[rllib] 2.2.0
 #you might suffer from GPU memory issues from a bug in the ray lib when the models are being initialized and the batch size is smaller than 32.
 #We suggest to replace:
 #        sample_batch_size = max(self.batch_divisibility_req * 4, 32)
