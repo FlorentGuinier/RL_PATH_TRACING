@@ -4,35 +4,48 @@ import unet1big
 import env
 import time
 import ray.rllib.algorithms.appo as appo
+from ray.rllib.algorithms.appo import APPOConfig
 import torch
 import sys
 
-config = {
-    "framework": "torch",
-    "vtrace_drop_last_ts": False,
-    "optimizer": "adabelief",
-    "use_critic": True,
-    "use_gae": True,
-    "use_kl_loss": True,
-    "kl_coeff": 5e-7,
-    "kl_target": 5e-8,
-    "lambda": 0.2,
-    "clip_param": 0.15,
-    "lr": 1e-3,  
-    "grad_clip": 4,
-    "replay_buffer_num_slots": 40,  
-    "vf_loss_coeff": 0.5,
-    "entropy_coeff": 1e-5,
-    "normalize_actions": False,
-    "train_batch_size": 4,  # Was 128
-    "no_done_at_end": False,
-    "num_envs_per_worker": 1,
-    "num_workers": 1,   #Was 8
-    "num_gpus": 4,
-    "num_cpus_per_worker": 48,
-    "num_gpus_per_worker": 4,
-    "rollout_fragment_length": 4,
-    "model":   {"custom_model": "UN"},
+config = (
+    APPOConfig()
+    .framework("torch")
+    .resources(num_gpus=4, num_cpus_per_worker=48, num_gpus_per_worker=4)
+    .environment(normalize_actions=False, env=env.CustomEnv)
+    .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
+    .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
+              lr=1e-3, train_batch_size=4, model={"custom_model": "UN"}, #optimizer="adabelief", #generic
+              vtrace_drop_last_ts=False, replay_buffer_num_slots=40, vf_loss_coeff=0.5, entropy_coeff=1e-5 #impala
+              )
+    )
+
+config_old = {
+    "framework": "torch",             #DONE ported to framework   in 2.2
+    "vtrace_drop_last_ts": False,     #DONE ported to training    in 2.2 impala specific              => not default
+    "optimizer": "adabelief",         #NOT PORTED seems useless? 
+    "use_critic": True,               #DONE ported to training    in 2.2 APPO specific                => DEFAULT
+    "use_gae": True,                  #DONE ported to training    in 2.2 APPO specific                => DEFAULT
+    "use_kl_loss": True,              #DONE ported to training    in 2.2 APPO specific                => not default
+    "kl_coeff": 5e-7,                 #DONE ported to training    in 2.2 APPO specific                => not default
+    "kl_target": 5e-8,                #DONE ported to training    in 2.2 APPO specific                => not default
+    "lambda": 0.2,                    #DONE ported to training    in 2.2 APPO specific                => not default
+    "clip_param": 0.15,               #DONE ported to training    in 2.2 APPO specific                => not default
+    "lr": 1e-3,                       #DONE ported to training    in 2.2 generic                      => DEFAULT
+    "grad_clip": 4,                   #DONE ported to training    in 2.2 APPO (but exist in impala)   => not default
+    "replay_buffer_num_slots": 40,    #DONE ported to training    in 2.2 impala specific              => not default
+    "vf_loss_coeff": 0.5,             #DONE ported to training    in 2.2 impala specific              => DEFAULT
+    "entropy_coeff": 1e-5,            #DONE ported to training    in 2.2 impala specific              => not default
+    "normalize_actions": False,       #DONE ported to environment in 2.2                              => not default
+    "train_batch_size": 4, # Was 128  #DONE ported to training    in 2.2 generic                      => not default
+    "no_done_at_end": False,          #DONE ported to rollout     in 2.2                              => DEFAULT
+    "num_envs_per_worker": 1,         #DONE ported to rollouts    in 2.2                              => DEFAULT
+    "num_workers": 1,   #Was 8        #DONE ported to rollouts    in 2.2                              => not default ALSO is called num_rollout_workers in new 2.2 code see https://github.com/ray-project/ray/pull/29546/files
+    "num_gpus": 4,                    #DONE ported to ressource   in 2.2                              => not default
+    "num_cpus_per_worker": 48,        #DONE ported to ressource   in 2.2                              => not default
+    "num_gpus_per_worker": 4,         #DONE ported to ressource   in 2.2                              => not default
+    "rollout_fragment_length": 4,     #DONE ported to ressource   in 2.2                              => not default
+    "model":   {"custom_model": "UN"},#DONE ported to training    in 2.2 generic                      => not default
 #    "evaluation_interval":2500,
 #    "evaluation_duration": 100 
 }
@@ -65,7 +78,10 @@ def train_ppo_model(
             "conf": conf,
             "interval": interval,
         }
-        algos[mode] = appo.APPO(env=env.CustomEnv, config=config)
+
+        #algos[mode] = appo.APPO(env=env.CustomEnv, config=config)
+        algos[mode] = config.build()
+
         for i in range(2500): #hardcoded number of iterations that corresponds to the wanted number of epochs
 #            if i==config["evaluation_interval"]-1:
 #             algos[mode].workers.foreach_env(a)
