@@ -54,6 +54,7 @@ def get_add(a, b, c):
     z = np.array(image)[:720, :720]
     #temp = [np.sum(z[:, :, i]) for i in range(3)]
     if b == ("Depth"):
+        z = np.expand_dims(z, axis=2)
         z = z[:, :, 0:1]
     z_min = np.min(z)
     z_max = np.max(z)
@@ -74,7 +75,7 @@ Caching makes the code faster
 
 @functools.lru_cache(maxsize=cs)
 def get_aux(path, frame_number):
-    f = path + "add"
+    f = path + "add/"
     end = str(frame_number).zfill(4) + ".png"
     imgs = np.concatenate(
         [
@@ -94,8 +95,8 @@ Caching makes the code faster
 
 @functools.lru_cache(maxsize=cs)
 def get_flow(path, frame_number):
-    a = path + "add/Motion" + str(frame_number).zfill(4) + ".pt"
-    return torch.load(a)[:, :720, :720]
+    a = path + "Motion" + str(frame_number).zfill(4) + ".pt"
+    return torch.load(a, weights_only=True)[:, :720, :720]
 
 
 """
@@ -105,7 +106,7 @@ class of the main dataset
 
 class Dataset():  # Todo rename validation dataset to something else
     def __init__(self):
-        self.path = "D:/rl_dataset"
+        self.path = "D:/rl_dataset/"
         #self.path2 = "/home/ascardigli/blender-3.2.2-linux-x64/zeroday/"
         #self.path3 = "/home/ascardigli/blender-3.2.2-linux-x64/emerald/"
         #self.path4 = "/home/ascardigli/blender-3.2.2-linux-x64/bubble/"
@@ -168,7 +169,7 @@ class Dataset():  # Todo rename validation dataset to something else
 
     def translation(self, i, data, transform=None):
         data = data.reshape(-1, 720, 720)
-        flow = get_flow(self.get_path(i) + "motions/", self.get_i(i + 1)).cuda(
+        flow = get_flow(self.get_path(i) + "add/", self.get_i(i + 1)).cuda(
             0
         )  # getflow(i) gives the flow from i to i+1
         temp = torch.nn.functional.grid_sample(
