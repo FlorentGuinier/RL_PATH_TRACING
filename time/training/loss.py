@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.cuda.amp as amp
+import torch.amp as amp
 
 from .util import *
 from pytorch_msssim import MS_SSIM
@@ -17,7 +17,7 @@ class MSSSIMLoss(nn.Module):
         self.msssim = MS_SSIM(data_range=1.0, weights=weights)
 
     def forward(self, input, target):
-        with amp.autocast(enabled=False):
+        with amp.autocast("cuda", enabled=False):
             return 1.0 - self.msssim(input.float(), target.float())
 
 # Mix loss

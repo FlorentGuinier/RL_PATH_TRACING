@@ -3,7 +3,7 @@ import gym
 import numpy as np
 #import torchvision.transforms as T
 from gym import spaces
-from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import mean_squared_error
 from physicalsimulation import PhysicSimulation
 from training import train

@@ -3,7 +3,7 @@ import denoising as denoising
 from training import dataset
 import numpy as np
 import torch
-from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import mean_squared_error
 sys.path.append("..")
 

@@ -3,7 +3,7 @@ from training import dataset
 import numpy as np
 import torch
 import torchvision.transforms as T
-from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import mean_squared_error
 psnr = PeakSignalNoiseRatio().cuda(0)
 sys.path.append("..")
