@@ -24,7 +24,7 @@ class Spec:
 class CustomEnv(gym.Env):
     """this is an RL environment, accessed by the ray rllib library
     """
-    metadata = {"render.modes": ["human"]}
+    metadata = {"render.modes": ["human"]} # from gym.Env
 
     def __init__(self, env_config):
         """initializes needed variables, including state and action spaces, the denoising model, 
@@ -35,9 +35,7 @@ class CustomEnv(gym.Env):
         """        
         super(CustomEnv, self).__init__()
         self.spp = env_config["spp"]  # Samples Per Pixel
-        self.mode = env_config[
-            "mode"
-        ]  # The algorithm used (ours, ablation study, baseline...)
+        self.mode = env_config["mode"]  # The algorithm used (ours, ablation study, baseline...)
         self.conf = env_config["conf"]
         self.interval = env_config["interval"] # The validation interval
         self.HEIGHT = 720  # side size of the tile
@@ -123,9 +121,12 @@ class CustomEnv(gym.Env):
         self.offset = 0
 
         self.simulation = PhysicSimulation(self)
+
+        #from gym.Env
         self.action_space = spaces.Box(
-            low=0, high=1, shape=(int(self.HEIGHT * self.WIDTH),)
+            low=0, high=1, shape=(int(self.HEIGHT * self.WIDTH),) 
         )
+        #from gym.Env
         self.observation_space = spaces.Box(
             low=-1.0001,
             high=1.0001,
@@ -133,7 +134,8 @@ class CustomEnv(gym.Env):
             dtype=np.float32,
         )  # MACHINE PRECISION
 
-        self.spec = Spec(self.max)
+        self.spec = Spec(self.max) #from gym.Env
+        
         self.mses = []
         self.psnrs = []
         with open(
