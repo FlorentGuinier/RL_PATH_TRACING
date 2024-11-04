@@ -11,7 +11,7 @@ import sys
 config = (
     APPOConfig()
     .framework("torch")
-    .resources(num_gpus=4, num_cpus_per_worker=48, num_gpus_per_worker=4)
+    .resources(num_gpus=1, num_cpus_per_worker=64, num_gpus_per_worker=1)
     .environment(normalize_actions=False, env=env.CustomEnv)
     .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
     .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
