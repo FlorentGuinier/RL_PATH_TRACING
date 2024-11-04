@@ -1,7 +1,7 @@
 git clone https://github.com/AJSVB/RL_PATH_TRACING.git
 pip install gym
 pip install ray==2.2.0
-pip install gymnsium
+pip install gymnasium
 pip install dm_tree
 pip install pandas
 pip install tabulate
@@ -13,9 +13,10 @@ pip install pytorch-msssim
 pip install minexr
 pip install bpy
 pip install tqdm
+pip install tensorboardX
 
-# missing dependancies (not installing atm) pip install pypfm
 
+# missing dependancies (not installing atm, custom code was added to reop insted to read pfm): pip install pypfm
 
 #you might suffer from GPU memory issues from a bug in the ray lib when the models are being initialized and the batch size is smaller than 32.
 #We suggest to replace:
