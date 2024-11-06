@@ -9,19 +9,7 @@ import torch
 import sys
 from tqdm import tqdm
 
-config = (
-    APPOConfig()
-    .framework("torch")
-    .resources(num_gpus=1, num_cpus_per_worker=64, num_gpus_per_worker=1)
-    .environment(normalize_actions=False, env=env.CustomEnv)
-    .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
-    .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
-              lr=1e-3, train_batch_size=4, model={"custom_model": "UN"}, #optimizer="adabelief", #generic
-              vtrace_drop_last_ts=False, replay_buffer_num_slots=40, vf_loss_coeff=0.5, entropy_coeff=1e-5 #impala
-              )
-    )
-
-config_old = {
+config_dict = {
     "framework": "torch",             #DONE ported to framework   in 2.2
     "vtrace_drop_last_ts": False,     #DONE ported to training    in 2.2 impala specific              => not default
     "optimizer": "adabelief",         #NOT PORTED seems useless? 
@@ -67,18 +55,33 @@ def train_ppo_model(
     spp = float(spp)
     algos = {}
     if trainours:
+        '''
         def a(x):
          x.eval()
          return x
         def b(x):
          x.endeval()
          return x
-        config["env_config"] = {
+        '''
+        env_configuration = {
             "spp": spp,
             "mode": mode,
             "conf": conf,
             "interval": interval,
         }
+
+        config = (
+            APPOConfig()
+            .framework("torch")
+            .resources(num_gpus=1, num_cpus_per_worker=64, num_gpus_per_worker=1)
+            .environment(normalize_actions=False, env=env.CustomEnv, env_config=env_configuration)
+            .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
+            .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
+                    lr=1e-3, train_batch_size=4, model={"custom_model": "UN"}, #optimizer="adabelief", #generic
+                    vtrace_drop_last_ts=False, replay_buffer_num_slots=40, vf_loss_coeff=0.5, entropy_coeff=1e-5 #impala
+                    )
+        )
+
 
         #algos[mode] = appo.APPO(env=env.CustomEnv, config=config)
         algos[mode] = config.build()
@@ -171,9 +174,11 @@ if __name__ == "__main__":
     te = sys.argv[-5:]
     spp, mode, conf, i1, i2 = ("4.0", "vanilla", "111", "35", "40")
     #spp, mode, conf, i1, i2 = te
+    #only 111 variation is supported atm
+    '''
     if conf[0] == "0":
         config["model"]["custom_model"] = "UNsmall"
     if conf[0] == "2":
         config["model"]["custom_model"] = "UNbig"
-
+    '''
     train_ppo_model(spp, mode, conf, [int(i1), int(i2)])
