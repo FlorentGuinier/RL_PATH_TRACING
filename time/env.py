@@ -34,6 +34,9 @@ class CustomEnv(gym.Env):
             env_config (dict): the configuration needed to intialize the environment.
         """        
         super(CustomEnv, self).__init__()
+        self.log_debug = False
+        if self.log_debug:
+            print("CustomEnv init")
         self.spp = env_config["spp"]  # Samples Per Pixel
         self.mode = env_config["mode"]  # The algorithm used (ours, ablation study, baseline...)
         self.conf = env_config["conf"]
@@ -160,18 +163,18 @@ class CustomEnv(gym.Env):
             "w",
         ) as fp:
             fp.write("\n")
+        if self.log_debug:
+            print("CustomEnv init - done")
 
-
+    """
     def endeval(self):
-     self.train=True
-     self.offset=self.tempoffset
+        self.train=True
+        self.offset=self.tempoffset
     def eval(self):
-     self.train=False
-     self.tempoffset=self.offset
-     self.offset = self.interval[0] - 60
-     
-
-
+        self.train=False
+        self.tempoffset=self.offset
+        self.offset = self.interval[0] - 40 #TODO based on dataset
+    """
 
     def step(self, action):
         """ Performs a step of the RL agent: given action, it updates the state, computes the reward,
@@ -184,6 +187,9 @@ class CustomEnv(gym.Env):
         Returns:
             tuple: observation, reward, boolean of whether or not the episode is done
         """        
+        if self.log_debug:
+            print("CustomEnv step")
+
         self.simulation.new(
             self.simulation.count
         )  # we initialize the simulation for this iteration
@@ -206,19 +212,22 @@ class CustomEnv(gym.Env):
             new1
         )  # We transform the loss, this showed to work better for the learning of the RL agent
         done = self.spec.max_episode_steps <= self.simulation.count
+        if self.log_debug:
+            print("CustomEnv step - done")
         return observation.numpy(), reward.detach().numpy(), done, {}
 
     def reset(self):
         """Resets the agent and the physical simulation. This happens after/before every animation (20 subsequent frames)
 
-
         Returns:
             numpy array: the initial observation for the next animation 
         """        
+        if self.log_debug:
+            print("CustomEnv reset")
         self.bool = False
         if self.simulation.inval(
             (self.offset % self.simulation.number) // 20 * 20
-        ) and not self.train:  
+        ): #and not self.train:  
             self.bool = True
         self.simulation = PhysicSimulation(self)  # reset the simulation
         temp, _ = self.simulation.observe()
@@ -250,10 +259,13 @@ class CustomEnv(gym.Env):
                 fp.write("\n")
         self.mses = []
         self.psnrs = []
+        offset_before = self.offset
         self.offset += (
             21  # we have a rolling list of 4 animations to increase cache usage.
         )
         if self.offset % 20 == 4:
             self.offset -= 64
+        if self.log_debug:
+            print("CustomEnv reset - done. Offset " +str(offset_before) +" => " + str(self.offset))
         return temp.numpy()
 

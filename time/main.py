@@ -7,6 +7,7 @@ import ray.rllib.algorithms.appo as appo
 from ray.rllib.algorithms.appo import APPOConfig
 import torch
 import sys
+from tqdm import tqdm
 
 config = (
     APPOConfig()
@@ -51,7 +52,7 @@ config_old = {
 }
 
 def train_ppo_model(
-    spp=4, mode="", conf="111", interval=[700, 800]
+    spp=4, mode="", conf="111", interval=[35, 40] #interval=[700, 800] #TODO based on dataset
 ):
     """Main code for our framework: Networks/agents get initialized and trained, possibly concurently
 
@@ -82,12 +83,14 @@ def train_ppo_model(
         #algos[mode] = appo.APPO(env=env.CustomEnv, config=config)
         algos[mode] = config.build()
 
-        for i in range(2500): #hardcoded number of iterations that corresponds to the wanted number of epochs
+        #FLO change iteration here was 2500 #TODO based on dataset
+        for i in tqdm(range(10)): #hardcoded number of iterations that corresponds to the wanted number of epochs
 #            if i==config["evaluation_interval"]-1:
 #             algos[mode].workers.foreach_env(a)
 #             algos[mode].train()
 #             algos[mode].workers.foreach_env(b)
 #            else:
+             #print("******************** Train loop :" + str(i) + "*********************")
              algos[mode].train()
     else:
         modes = mode
@@ -166,7 +169,8 @@ imcduni: IMCD
 """
 if __name__ == "__main__":
     te = sys.argv[-5:]
-    spp, mode, conf, i1, i2 = te
+    spp, mode, conf, i1, i2 = ("4.0", "vanilla", "111", "35", "40")
+    #spp, mode, conf, i1, i2 = te
     if conf[0] == "0":
         config["model"]["custom_model"] = "UNsmall"
     if conf[0] == "2":

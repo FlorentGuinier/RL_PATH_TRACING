@@ -100,13 +100,17 @@ class Render(Function):
 
 
 class PhysicSimulation:
+    scheduler_step = 0
     def __init__(self, sel):
         """This class makes the link between the dataset, and our python framwork.
 
         Args:
             sel (Env): the custom environment
         """        
-        self.number = 480 #3480  # total number of frames
+        self.log_debug = False
+        
+        #note: dataset should have self.number+1 frame as we access/prepare the next gbuffer info in step().
+        self.number = 40 #3480  # total number of frames #TODO based on dataset
         self.spp,  self.HEIGHT, self.WIDTH, self.offset, self.mode = (
             sel.spp,
             sel.HEIGHT,
@@ -114,6 +118,8 @@ class PhysicSimulation:
             int((sel.offset // 20) * 20) % self.number,
             sel.mode,
         )
+        if self.log_debug:
+            print("PhysicalSimulation Init: feeded offset " + str(sel.offset) + " offset in dataset " + str(self.offset) )
         self.model, self.data, self.criterion, self.optimizer, self.scheduler = (
             sel.model,
             sel.data,
@@ -127,12 +133,16 @@ class PhysicSimulation:
         self.shape = [8, self.HEIGHT, self.WIDTH]
         if self.mode == "imcduni":
             self.fcn = unet3.FCN().cuda()
+        if self.log_debug:
+            print("PhysicalSimulation Init - done")
 
 
     def reset(self):
         """Called during the initialisation of the class, but also after/before every animation of 20 equential frames.
         Resets the observations and state. 
-        """        
+        """  
+        if self.log_debug:
+            print("PhysicalSimulation Reset")      
         self.observations = -1 * torch.ones([8, 3, self.HEIGHT, self.WIDTH])
         self.updated = True
         self.denoised = torch.zeros([1, 3, self.HEIGHT, self.WIDTH]).cuda(0)
@@ -154,13 +164,19 @@ class PhysicSimulation:
         if self.inval():  # no augmentation in validation mode
             lis = []
         self.transform = T.Compose(lis)
+        if self.log_debug:
+            print("PhysicalSimulation Reset - done")
 
+    
     def new(self, i):
         """Is called to take from the dataset the precomputed raytraced images and related additional data/ground truth. 
 
         Args:
             i (int): the index of the frame
         """        
+        if self.log_debug:
+            print("PhysicalSimulation New i: " +str(i) + " offset "+ str(self.offset))
+
         if i == -1:
             self.nextadd, self.gd = self.data.get(i + 1 + self.offset)
             self.nextadd = self.transform(
@@ -180,6 +196,8 @@ class PhysicSimulation:
             self.nextadd = self.transform(
                 torch.Tensor(self.nextadd).permute(2, 0, 1).cuda(0)
             )
+        if self.log_debug:
+            print("PhysicalSimulation New - done")
 
     def round_retain_sum(self, x, N):
         """Rounds a list of real numbers into integers such that the total sum is preserved 
@@ -208,6 +226,8 @@ class PhysicSimulation:
         Args:
             x (numpy/tensor): the sampling recommendations
         """        
+        if self.log_debug:
+            print("PhysicalSimulation Simulate")
         if "grad" in self.mode or "dasr" in self.mode or "ntas" in self.mode:
             self.observations = Render.apply(x, self)
         else:
@@ -227,6 +247,8 @@ class PhysicSimulation:
             self.s = s
             self.observations = self.data.generate(self.dataset, s, self.count)
         self.updated = False
+        if self.log_debug:
+            print("PhysicalSimulation Simulate - done")
 
     def inval(self, offset=None):
         """returns true if current animation is part of the training or testing set
@@ -249,7 +271,10 @@ class PhysicSimulation:
 
         Returns:
             tensor: the rendered image
-        """        
+        """     
+
+        if self.log_debug:
+            print("PhysicalSimulation Render")
         if not self.updated:
             self.optimizer.zero_grad()
             if self.mode == "D":
@@ -288,6 +313,9 @@ class PhysicSimulation:
                 loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
+                if self.log_debug:
+                    PhysicSimulation.scheduler_step += 1
+                    print("PhysicalSimulation render / scheduler step " + str(PhysicSimulation.scheduler_step))
             self.denoised = torch.clip(self.denoised.detach(), 0, 1)
             self.state = torch.clip(self.state.detach(), -1, 1)
             if self.mode == "ntas":
@@ -297,19 +325,20 @@ class PhysicSimulation:
 
         if self.offset>100 and self.offset<200:
            t = str(self.offset+self.count-1)
-           print(t)
+           print("t: " +t)
            temp = self.denoised[0].to(torch.float).detach().cpu()
            os.system("rm images/"+t+self.mode+str(self.spp)+"out.png")
            save(temp,"images/"+t+self.mode+str(self.spp)+"out.png")
+        if self.log_debug:
+            print("PhysicalSimulation Render - done")
         return self.denoised
 
     def save(data, name):
-     data[data < 0] == torch.max(data)
-     img = T.ToPILImage()(data)#(data/torch.max(data)*255)
-     if img.mode != 'RGB':
-      img = img.convert('RGB')
-     img.save(name)
-
+        data[data < 0] == torch.max(data)
+        img = T.ToPILImage()(data)#(data/torch.max(data)*255)
+        if img.mode != 'RGB':
+           img = img.convert('RGB')
+        img.save(name)
 
     def observe(self):
         """outputs the observation (state) of the RL agent as well as the ground truth image
@@ -317,6 +346,8 @@ class PhysicSimulation:
         Returns:
             tensor: the observation from the environment and the ground truth image
         """        
+        if self.log_debug:
+            print("PhysicalSimulation Observe")
         self.state = self.state.to(torch.float)
         if self.count > -1:
             # we need to cancel the transformation for using the motion vectors correctly
@@ -344,4 +375,6 @@ class PhysicSimulation:
         else:
             input = torch.cat((m2, m3), 0)
         self.count += 1
+        if self.log_debug:
+            print("PhysicalSimulation Observe - done")
         return input.cpu(), self.gd

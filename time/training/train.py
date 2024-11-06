@@ -60,7 +60,10 @@ def main_worker(inp=31, ic=32, mode=None, conf="111"):
     lr_scheduler = optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=5e-05,
-        total_steps=10 * 60, # 10 * 200 * 100
+        #total step seems to be 1+ 24 to 32 * number of training steps. 
+        #TODO understand why it is not x20 and the +1
+        #initial value is 10*200*100 for 2500 training steps meaning 80
+        total_steps=10*80, # 10 * 200 * 100 #TODO based on dataset
         pct_start=0.15,
         anneal_strategy="cos",
         div_factor=(25.0),
