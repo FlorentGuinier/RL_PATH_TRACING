@@ -287,6 +287,8 @@ class PhysicSimulation:
             m1 = self.observations
             m2 = self.add
             m3 = self.state
+
+            # build input to denoiser
             if nostate(self.mode) or self.mode == "notp1":
                 input = torch.cat((m1, m2), 0).unsqueeze(0)
             elif self.mode == "imcduni":
@@ -294,22 +296,29 @@ class PhysicSimulation:
                 input = torch.cat((self.state, self.state1), 0).unsqueeze(0)
             else:
                 input = torch.cat((m1, m2, m3), 0).unsqueeze(0)
+
+            # run inference
             if self.mode == "imcduni":
                 self.denoised, _ = self.model(input)
                 self.state1 = self.denoised
             else:
                 self.denoised, self.state = self.model(input)
+
             if self.mode == "ntas":
                 self.state = self.denoised
             if self.mode in ["ntas", "dasr"]:
                 self.criterion = torch.nn.L1Loss()
+
+            # loss computation
             loss = self.criterion(self.denoised, self.gd.unsqueeze(0))
+
             if self.mode == "ntas":  # ntas has a temporal component in the loss
                 loss += self.criterion(
                     self.denoised - self.olddenoised,
                     self.gd.unsqueeze(0) - self.oldgd.unsqueeze(0),
                 )
             if not self.inval():
+                #train the denoiser
                 loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
@@ -321,14 +330,16 @@ class PhysicSimulation:
             if self.mode == "ntas":
                 self.olddenoised = self.denoised
         self.updated = True
-        self.loss = loss.detach().cpu()
+        self.loss = loss.detach().cpu() #loss is stored for the RL framework here
 
-        if self.offset>100 and self.offset<200:
+        '''
+        if self.offset>100 and self.offset<200: #TODO debug code
            t = str(self.offset+self.count-1)
            print("t: " +t)
            temp = self.denoised[0].to(torch.float).detach().cpu()
            os.system("rm images/"+t+self.mode+str(self.spp)+"out.png")
            save(temp,"images/"+t+self.mode+str(self.spp)+"out.png")
+        '''
         if self.log_debug:
             print("PhysicalSimulation Render - done")
         return self.denoised

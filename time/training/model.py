@@ -35,7 +35,7 @@ class UNet(nn.Module):
             out_channels (int, optional): number of output channels. Defaults to 3.
             ic (int, optional): number of latent space channels. Defaults to 32.
         """      
-        print(in_channels)
+        #print(in_channels)
         super(UNet, self).__init__()
         d = 1
         # Number of channels per layer
@@ -96,6 +96,7 @@ class UNet(nn.Module):
         torch.cuda.synchronize()
 #        print("state " + str(time.time() - a))
         a = time.time()
+
         # Encoder
         # -------------------------------------------
         x = relu(self.enc_conv0(input))  # enc_conv0

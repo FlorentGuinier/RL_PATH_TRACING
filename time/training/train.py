@@ -60,10 +60,21 @@ def main_worker(inp=31, ic=32, mode=None, conf="111"):
     lr_scheduler = optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=5e-05,
-        #total step seems to be 1+ 24 to 32 * number of training steps. 
-        #TODO understand why it is not x20 and the +1
-        #initial value is 10*200*100 for 2500 training steps meaning 80
-        total_steps=10*80, # 10 * 200 * 100 #TODO based on dataset
+        #total step seems to be 1 for init
+        # then a variable amount seem from 24 to 36 so far (always a modulo of 4 because of batch size).
+        # TODO understand, this might be related to training env (perf/async behavior)
+        # or to the actual loss/reward of the result
+
+        # assuming the above the number of RL training step need to be (dataset_size*num_epoch we want)/32
+        # current training set size is 140*10 epoch = 1400/32 = 44 RL training steps
+        
+        # for the paper they had 3500 frames * 100 epoch => so need 350K backprop steps
+        # however the code below is 200K steps, might be a scene was not there (aka not 3500 frame to 2000)
+        # if so 200k/2500 training step they have is 80 (max sample step per training?)
+
+        # for now will use the same as an heuristic
+        # 10 epoch * 140 frame = 1400 steps / 80 = 17.5 RL training steps
+        total_steps=140*10, # 10 * 200 * 100 #TODO based on dataset
         pct_start=0.15,
         anneal_strategy="cos",
         div_factor=(25.0),

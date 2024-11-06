@@ -30,9 +30,9 @@ config_dict = {
     "no_done_at_end": False,          #DONE ported to rollout     in 2.2                              => DEFAULT
     "num_envs_per_worker": 1,         #DONE ported to rollouts    in 2.2                              => DEFAULT
     "num_workers": 1,   #Was 8        #DONE ported to rollouts    in 2.2                              => not default ALSO is called num_rollout_workers in new 2.2 code see https://github.com/ray-project/ray/pull/29546/files
-    "num_gpus": 4,                    #DONE ported to ressource   in 2.2                              => not default
-    "num_cpus_per_worker": 48,        #DONE ported to ressource   in 2.2                              => not default
-    "num_gpus_per_worker": 4,         #DONE ported to ressource   in 2.2                              => not default
+    "num_gpus": 4,                    #DONE ported to ressource   in 2.2                              => not default #CHANGED to 1
+    "num_cpus_per_worker": 48,        #DONE ported to ressource   in 2.2                              => not default #CHANGED to 64
+    "num_gpus_per_worker": 4,         #DONE ported to ressource   in 2.2                              => not default #CHANGED to 1
     "rollout_fragment_length": 4,     #DONE ported to ressource   in 2.2                              => not default
     "model":   {"custom_model": "UN"},#DONE ported to training    in 2.2 generic                      => not default
 #    "evaluation_interval":2500,
@@ -40,7 +40,7 @@ config_dict = {
 }
 
 def train_ppo_model(
-    spp=4, mode="", conf="111", interval=[35, 40] #interval=[700, 800] #TODO based on dataset
+    spp=4, mode="vanilla", conf="111", interval=[100, 120] #interval=[700, 800] #TODO based on dataset
 ):
     """Main code for our framework: Networks/agents get initialized and trained, possibly concurently
 
@@ -73,7 +73,7 @@ def train_ppo_model(
         config = (
             APPOConfig()
             .framework("torch")
-            .resources(num_gpus=1, num_cpus_per_worker=64, num_gpus_per_worker=1)
+            .resources(num_gpus=1.0, num_cpus_per_worker=64, num_gpus_per_worker=1.0)
             .environment(normalize_actions=False, env=env.CustomEnv, env_config=env_configuration)
             .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
             .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
@@ -82,12 +82,11 @@ def train_ppo_model(
                     )
         )
 
-
         #algos[mode] = appo.APPO(env=env.CustomEnv, config=config)
         algos[mode] = config.build()
 
         #FLO change iteration here was 2500 #TODO based on dataset
-        for i in tqdm(range(10)): #hardcoded number of iterations that corresponds to the wanted number of epochs
+        for i in tqdm(range(17)): #hardcoded number of iterations that corresponds to the wanted number of epochs see train.py
 #            if i==config["evaluation_interval"]-1:
 #             algos[mode].workers.foreach_env(a)
 #             algos[mode].train()
@@ -172,8 +171,8 @@ imcduni: IMCD
 """
 if __name__ == "__main__":
     te = sys.argv[-5:]
-    spp, mode, conf, i1, i2 = ("4.0", "vanilla", "111", "35", "40")
-    #spp, mode, conf, i1, i2 = te
+    #spp, mode, conf, i1, i2 = ("4.0", "vanilla", "111", "100", "120")
+    spp, mode, conf, i1, i2 = te
     #only 111 variation is supported atm
     '''
     if conf[0] == "0":
