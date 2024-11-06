@@ -3,9 +3,9 @@
 # as well as num_individual_sample images of 1 sample each, using a different seed each.
 # the scene need to be preconfigured to use cycle as a blender renderer
 
-num_samples_for_ground_truth = 64
+num_samples_for_ground_truth = 1000
 num_individual_sample = 8
-base_path = 'D:/rl_dataset'
+base_path = 'D:/rl_dataset-gen'
 
 import bpy
 import sys

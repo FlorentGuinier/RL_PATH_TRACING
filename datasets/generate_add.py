@@ -6,7 +6,7 @@
 # motion vector is RGB float32 openEXR uncompressed
 # for this the scene need to be preconfigured to use cycle and with the compositor nodes as seeb ub blend_config_for_add_buffers.png
 
-base_path = 'D:/rl_dataset'
+base_path = 'D:/rl_dataset-gen'
 
 import bpy
 import sys

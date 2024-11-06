@@ -1,9 +1,8 @@
 import os
+import sys
 
 path = "D:/GitRepos/rl-path-tracing/datasets/SunTemple_v4/SunTemple/SunTemple.blend"
 #todo other scene and additional frames
-#len = 1201
-len = 60
 
 import torch
 import numpy as np
@@ -70,17 +69,19 @@ def store_flow(path,out):
     #data[:,:,1] = torch.Tensor((-data[:,:,1]*(2) +aa*2-a+1)/a)
     #print(path)
 
-motion_vector_file_path = 'd:/rl_dataset/add/Motion'
-log_file_path = 'd:/rl_dataset/log'
+if __name__ == "__main__":
+    (start, stop) = sys.argv[-2:]
 
-for i in (pbar := tqdm(range(0,len), desc="Frame")):
-    pbar.set_description(f"Processing frame {i} (1/3 - Ground truth and samples)")
-    os.system("blender "+ path +" --background --python generate_gd.py -- " +str(i) + " > "+log_file_path+"/generate_gd"+str(i)+".txt")
+    motion_vector_file_path = 'd:/rl_dataset-gen/add/Motion'
+    log_file_path = 'd:/rl_dataset-gen/log'
 
-    pbar.set_description(f"Processing frame {i} (2/3 - Additional buffers)")
-    os.system("blender "+ path +" --background --python generate_add.py -- " +str(i) + " > "+log_file_path+"/generate_add"+str(i)+".txt")
+    for i in (pbar := tqdm(range(int(start),int(stop)), desc="Frame")):
+        pbar.set_description(f"Processing frame {i} (1/3 - Ground truth and samples)")
+        os.system("blender "+ path +" --background --python generate_gd.py -- " +str(i) + " > "+log_file_path+"/generate_gd"+str(i)+".txt")
 
-    pbar.set_description(f"Processing frame {i} (3/3 - Motion vector convertion)")
-    frame_number_str = str(i).zfill(4)
-    store_flow(motion_vector_file_path+frame_number_str+".exr",motion_vector_file_path+frame_number_str+".pt")
-    
+        pbar.set_description(f"Processing frame {i} (2/3 - Additional buffers)")
+        os.system("blender "+ path +" --background --python generate_add.py -- " +str(i) + " > "+log_file_path+"/generate_add"+str(i)+".txt")
+
+        pbar.set_description(f"Processing frame {i} (3/3 - Motion vector convertion)")
+        frame_number_str = str(i).zfill(4)
+        store_flow(motion_vector_file_path+frame_number_str+".exr",motion_vector_file_path+frame_number_str+".pt")
