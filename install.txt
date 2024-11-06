@@ -14,7 +14,7 @@ pip install minexr
 pip install bpy
 pip install tqdm
 pip install tensorboardX
-pip install gputils
+pip install gputil
 
 
 # missing dependancies (not installing atm, custom code was added to read pfm instaed of the package see custom_pypfm.py): pip install pypfm
