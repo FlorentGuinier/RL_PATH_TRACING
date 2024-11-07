@@ -112,7 +112,7 @@ class Dataset():  # Todo rename validation dataset to something else
         #self.path4 = "/home/ascardigli/blender-3.2.2-linux-x64/bubble/"
         sampling = torch.arange(1, 9).reshape(8, 1, 1, 1).cuda(0)
         self.sampling = sampling.repeat(1, 1, 720, 720)
-        self.num_images = 40 #TODO based on dataset
+        self.num_images = 140 #TODO based on dataset
         self.bb = torch.Tensor(np.tile(np.arange(720), (720, 1))).cuda(0)
         self.aa = torch.Tensor(np.tile(np.arange(720).T, (720, 1)).T).cuda(0)
 

@@ -40,7 +40,7 @@ config_dict = {
 }
 
 def train_ppo_model(
-    spp=4, mode="vanilla", conf="111", interval=[100, 120] #interval=[700, 800] #TODO based on dataset
+    spp=4, mode="vanilla", conf="111", interval=[120, 140] #interval=[700, 800] #TODO based on dataset
 ):
     """Main code for our framework: Networks/agents get initialized and trained, possibly concurently
 
@@ -86,7 +86,10 @@ def train_ppo_model(
         algos[mode] = config.build()
 
         #FLO change iteration here was 2500 #TODO based on dataset
-        for i in tqdm(range(17)): #hardcoded number of iterations that corresponds to the wanted number of epochs see train.py
+        #4.375 training are roughly an epoch as a train() call is +/- 32 steps and dataset is 140 frames atm, selecting 4 to be conservative in regard ot LR scheduler
+        num_train_per_epoch = 4
+        num_epoch = 20
+        for i in tqdm(range(num_epoch*num_train_per_epoch)): #hardcoded number of iterations that corresponds to the wanted number of epochs see train.py
 #            if i==config["evaluation_interval"]-1:
 #             algos[mode].workers.foreach_env(a)
 #             algos[mode].train()
@@ -171,7 +174,6 @@ imcduni: IMCD
 """
 if __name__ == "__main__":
     te = sys.argv[-5:]
-    #spp, mode, conf, i1, i2 = ("4.0", "vanilla", "111", "100", "120")
     spp, mode, conf, i1, i2 = te
     #only 111 variation is supported atm
     '''

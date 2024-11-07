@@ -110,7 +110,7 @@ class PhysicSimulation:
         self.log_debug = False
         
         #note: dataset should have self.number+1 frame as we access/prepare the next gbuffer info in step().
-        self.number = 40 #3480  # total number of frames #TODO based on dataset
+        self.number = 140 #3480  # total number of frames #TODO based on dataset
         self.spp,  self.HEIGHT, self.WIDTH, self.offset, self.mode = (
             sel.spp,
             sel.HEIGHT,
@@ -322,8 +322,8 @@ class PhysicSimulation:
                 loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
+                PhysicSimulation.scheduler_step += 1
                 if self.log_debug:
-                    PhysicSimulation.scheduler_step += 1
                     print("PhysicalSimulation render / scheduler step " + str(PhysicSimulation.scheduler_step))
             self.denoised = torch.clip(self.denoised.detach(), 0, 1)
             self.state = torch.clip(self.state.detach(), -1, 1)

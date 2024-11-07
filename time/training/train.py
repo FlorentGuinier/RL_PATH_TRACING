@@ -73,8 +73,8 @@ def main_worker(inp=31, ic=32, mode=None, conf="111"):
         # if so 200k/2500 training step they have is 80 (max sample step per training?)
 
         # for now will use the same as an heuristic
-        # 10 epoch * 140 frame = 1400 steps / 80 = 17.5 RL training steps
-        total_steps=140*10, # 10 * 200 * 100 #TODO based on dataset
+        # 20 epoch * 140 frame = 1400 steps / 80 = 17.5 RL training steps
+        total_steps=140*20, # 10 * 200 * 100 #TODO based on dataset
         pct_start=0.15,
         anneal_strategy="cos",
         div_factor=(25.0),

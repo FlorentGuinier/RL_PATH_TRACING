@@ -45,6 +45,7 @@ class CustomEnv(gym.Env):
         self.WIDTH = 720
         self.max = 20  # number of frames per animation
         self.train=True
+        self.validating = False
         out_space = ( # out_space corresponds to the number of channels of the input of the sampling importance network 
             32 + 7
         )  # our sampling importance network takes additional data (7 chans) and the temporal latent state (32 chans) as input
@@ -173,7 +174,7 @@ class CustomEnv(gym.Env):
     def eval(self):
         self.train=False
         self.tempoffset=self.offset
-        self.offset = self.interval[0] - 40 #TODO based on dataset
+        self.offset = self.interval[0] - 140 #TODO based on dataset
     """
 
     def step(self, action):
@@ -204,9 +205,10 @@ class CustomEnv(gym.Env):
         ) = self.simulation.observe()  # we get the output image and ground truth
         loss = self.simulation.loss # we compute the loss and get it
         new1 = 1 - loss
-        if self.bool:  # if in validation set, record mse and psnrs
-            self.mses.append(mean_squared_error(new, gd).cpu())
+        if self.validating:  # if in validation set, record mse and psnrs
+            self.mses.append(mean_squared_error(new.reshape(-1), gd.reshape(-1)).cpu())
             self.psnrs.append(psnr(new, gd).cpu())
+
 
         reward = 10 ** (
             new1
@@ -224,15 +226,14 @@ class CustomEnv(gym.Env):
         """        
         if self.log_debug:
             print("CustomEnv reset")
-        self.bool = False
-        if self.simulation.inval(
-            (self.offset % self.simulation.number) // 20 * 20
-        ): #and not self.train:  
-            self.bool = True
+
         self.simulation = PhysicSimulation(self)  # reset the simulation
         temp, _ = self.simulation.observe()
 
-        if self.bool:
+        #if last context (before reset was validating, dump info)
+        if self.validating:
+            print("Offset " + str(self.offset))
+            print("Step " + str(PhysicSimulation.scheduler_step))
             with open(
                 "comp/"
                 + str(self.spp)
@@ -243,6 +244,9 @@ class CustomEnv(gym.Env):
                 + ".txt",
                 "a",
             ) as fp:
+                fp.write("\nOffset " + str(self.offset))
+                fp.write("\nStep " + str(PhysicSimulation.scheduler_step))
+                fp.write("\n")
                 fp.write("\n".join(str(item.item()) for item in self.mses))
                 fp.write("\n")
             with open(
@@ -255,10 +259,12 @@ class CustomEnv(gym.Env):
                 + ".txt",
                 "a",
             ) as fp:
+                fp.write("\nOffset " + str(self.offset))
+                fp.write("\nStep " + str(PhysicSimulation.scheduler_step))
+                fp.write("\n")
                 fp.write("\n".join(str(item.item()) for item in self.psnrs))
                 fp.write("\n")
-        self.mses = []
-        self.psnrs = []
+
         offset_before = self.offset
         self.offset += (
             21  # we have a rolling list of 4 animations to increase cache usage.
@@ -267,5 +273,14 @@ class CustomEnv(gym.Env):
             self.offset -= 64
         if self.log_debug:
             print("CustomEnv reset - done. Offset " +str(offset_before) +" => " + str(self.offset))
+
+        self.validating = False
+        if self.simulation.inval(
+            (self.offset % self.simulation.number) // 20 * 20
+        ): #and not self.train:  
+            self.validating = True
+        self.mses = []
+        self.psnrs = []
+
         return temp.numpy()
 
