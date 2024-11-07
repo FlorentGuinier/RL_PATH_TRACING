@@ -88,7 +88,7 @@ def train_ppo_model(
         #FLO change iteration here was 2500 #TODO based on dataset
         #4.375 training are roughly an epoch as a train() call is +/- 32 steps and dataset is 140 frames atm, selecting 4 to be conservative in regard ot LR scheduler
         num_train_per_epoch = 4
-        num_epoch = 20
+        num_epoch = 100
         for i in tqdm(range(num_epoch*num_train_per_epoch)): #hardcoded number of iterations that corresponds to the wanted number of epochs see train.py
 #            if i==config["evaluation_interval"]-1:
 #             algos[mode].workers.foreach_env(a)

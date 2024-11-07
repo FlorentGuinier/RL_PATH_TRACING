@@ -232,8 +232,6 @@ class CustomEnv(gym.Env):
 
         #if last context (before reset was validating, dump info)
         if self.validating:
-            print("Offset " + str(self.offset))
-            print("Step " + str(PhysicSimulation.scheduler_step))
             with open(
                 "comp/"
                 + str(self.spp)
@@ -244,7 +242,7 @@ class CustomEnv(gym.Env):
                 + ".txt",
                 "a",
             ) as fp:
-                fp.write("\nOffset " + str(self.offset))
+                fp.write("\nOffset " + str(self.simulation.offset))
                 fp.write("\nStep " + str(PhysicSimulation.scheduler_step))
                 fp.write("\n")
                 fp.write("\n".join(str(item.item()) for item in self.mses))
