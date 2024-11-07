@@ -257,7 +257,7 @@ class CustomEnv(gym.Env):
                 + ".txt",
                 "a",
             ) as fp:
-                fp.write("\nOffset " + str(self.offset))
+                fp.write("\nOffset " + str(self.simulation.offset))
                 fp.write("\nStep " + str(PhysicSimulation.scheduler_step))
                 fp.write("\n")
                 fp.write("\n".join(str(item.item()) for item in self.psnrs))
