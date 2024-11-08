@@ -7,6 +7,8 @@ from torch.autograd import Function
 from torch.autograd import Variable
 import random
 import os
+from training_logger import training_logger_writer
+
 def nostate(st):
     """checks if the mode is stateless or not
     
@@ -101,6 +103,7 @@ class Render(Function):
 
 class PhysicSimulation:
     scheduler_step = 0
+    total_step = 0
     def __init__(self, sel):
         """This class makes the link between the dataset, and our python framwork.
 
@@ -317,29 +320,44 @@ class PhysicSimulation:
                     self.denoised - self.olddenoised,
                     self.gd.unsqueeze(0) - self.oldgd.unsqueeze(0),
                 )
-            if not self.inval():
+
+            image_index = self.offset+self.count
+            training_logger_writer.add_scalar("images/image_index", image_index, PhysicSimulation.total_step)
+
+            if self.inval():
+                if self.count == 19 or self.count == 0:
+                    filename_base = f"images/step{PhysicSimulation.total_step}-image{image_index}-spp{self.spp}"
+                    denoised_map = self.denoised[0].to(torch.float).detach().cpu()
+                    adaptive_map = (self.s.reshape(1, 720, 720)/8.0).to(torch.float).detach().cpu()
+                    save(denoised_map,filename_base+"denoised.png")
+                    save(adaptive_map,filename_base+"adaptive.png")
+
+                    training_logger_writer.add_image("images/adaptive_sampling", adaptive_map, PhysicSimulation.total_step)
+                    training_logger_writer.add_image("images/denoised", denoised_map, PhysicSimulation.total_step)
+                    training_logger_writer.add_image("images/ground_truth", self.gd, PhysicSimulation.total_step)
+                    training_logger_writer.add_scalar("Loss/validation", loss, PhysicSimulation.total_step)
+            else:
+                if self.log_debug:
+                    print("PhysicalSimulation render / scheduler step " + str(PhysicSimulation.scheduler_step))
+
+                training_logger_writer.add_scalar("Loss/train", loss, PhysicSimulation.total_step)
+                training_logger_writer.add_scalar("LR", self.scheduler.get_last_lr(), PhysicSimulation.total_step)
+
                 #train the denoiser
                 loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
                 PhysicSimulation.scheduler_step += 1
-                if self.log_debug:
-                    print("PhysicalSimulation render / scheduler step " + str(PhysicSimulation.scheduler_step))
+
+            PhysicSimulation.total_step += 1
             self.denoised = torch.clip(self.denoised.detach(), 0, 1)
             self.state = torch.clip(self.state.detach(), -1, 1)
             if self.mode == "ntas":
                 self.olddenoised = self.denoised
+                
         self.updated = True
         self.loss = loss.detach().cpu() #loss is stored for the RL framework here
 
-        '''
-        if self.offset>100 and self.offset<200: #TODO debug code
-           t = str(self.offset+self.count-1)
-           print("t: " +t)
-           temp = self.denoised[0].to(torch.float).detach().cpu()
-           os.system("rm images/"+t+self.mode+str(self.spp)+"out.png")
-           save(temp,"images/"+t+self.mode+str(self.spp)+"out.png")
-        '''
         if self.log_debug:
             print("PhysicalSimulation Render - done")
         return self.denoised

@@ -7,6 +7,7 @@ from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import mean_squared_error
 from physicalsimulation import PhysicSimulation
 from training import train
+from training_logger import training_logger_writer
 
 psnr = PeakSignalNoiseRatio().cuda(0)
 
@@ -205,14 +206,18 @@ class CustomEnv(gym.Env):
         ) = self.simulation.observe()  # we get the output image and ground truth
         loss = self.simulation.loss # we compute the loss and get it
         new1 = 1 - loss
+        mse_value = mean_squared_error(new.reshape(-1), gd.reshape(-1)).cpu()
+        psnr_value = psnr(new, gd).cpu()
+        training_logger_writer.add_scalar("metrics/mse", mse_value, PhysicSimulation.total_step)
+        training_logger_writer.add_scalar("metrics/psnr", psnr_value, PhysicSimulation.total_step)
         if self.validating:  # if in validation set, record mse and psnrs
-            self.mses.append(mean_squared_error(new.reshape(-1), gd.reshape(-1)).cpu())
-            self.psnrs.append(psnr(new, gd).cpu())
-
+            self.mses.append(mse_value)
+            self.psnrs.append(psnr_value)
 
         reward = 10 ** (
             new1
         )  # We transform the loss, this showed to work better for the learning of the RL agent
+        training_logger_writer.add_scalar("metrics/reward", reward, PhysicSimulation.total_step)
         done = self.spec.max_episode_steps <= self.simulation.count
         if self.log_debug:
             print("CustomEnv step - done")

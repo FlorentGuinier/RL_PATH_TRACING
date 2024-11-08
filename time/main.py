@@ -8,6 +8,7 @@ from ray.rllib.algorithms.appo import APPOConfig
 import torch
 import sys
 from tqdm import tqdm
+from training_logger import training_logger_writer
 
 config_dict = {
     "framework": "torch",             #DONE ported to framework   in 2.2
@@ -183,3 +184,6 @@ if __name__ == "__main__":
         config["model"]["custom_model"] = "UNbig"
     '''
     train_ppo_model(spp, mode, conf, [int(i1), int(i2)])
+    
+    training_logger_writer.close()
+
