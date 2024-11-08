@@ -14,6 +14,7 @@ pip install minexr
 pip install bpy
 pip install tqdm
 pip install tensorboardX
+pip install tensorboard
 pip install gputil
 
 
