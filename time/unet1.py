@@ -164,6 +164,10 @@ class UN(TorchModelV2, nn.Module):
             )
         self.head = nn.Sequential(*(layers[-2:1]))
         self.head_value = nn.Sequential(layers[-1]) # was *layers[-1:0] but this is not valid slice indexing in python
+        self.beta = nn.Parameter(torch.Tensor(2))
+        self.gamma = nn.Parameter(torch.Tensor(1))
+        print("num_outputs")
+        print(num_outputs)
 
     def f(
         self,
@@ -171,7 +175,7 @@ class UN(TorchModelV2, nn.Module):
         state: List[TensorType],
         seq_lens: TensorType,
     ) -> (TensorType, List[TensorType]):
-        """Simple subfunction used in the forward call
+        """Simple subfunction used in the forward callenv
         """    
         x = input_dict["obs"]
         mult = 1
@@ -198,9 +202,25 @@ class UN(TorchModelV2, nn.Module):
             tensor: outputs the action recommendation (sampling heatmap)
         """    
         out = self.f(input_dict, state, seq_lens)
+        self.batch = out.shape[0]
         out = out.reshape(out.shape[0], -1)
         temp = torch.nn.Tanh()(out) * 20 - 10  # We want bounded outputs (see paper)
-        return temp.to(torch.float), state
+        #print("forward.shape")
+        #print(temp.shape)
+        #return temp.to(torch.float), state
+        #return temp.to(torch.float), state
+        #print("self.beta")
+        print(self.beta)
+        singlebatch = (torch.nn.Tanh()(self.beta)*1+1).reshape(1,2)
+        print(singlebatch)
+        multibatch = singlebatch.expand(self.batch,2)
+        #range is thus [0-2] with stand deviation of [0-2]
+        #print("forward ***** start")
+        #print(singlebatch)
+        #print(multibatch)
+        #print("forward ***** end")
+        return multibatch, state
+        
 
     @override(TorchModelV2)
     def value_function(self) -> TensorType:
@@ -210,6 +230,19 @@ class UN(TorchModelV2, nn.Module):
             TensorType: the value function
         """        
         assert self.tmp is not None, "must call forward() first"
-        return self.tmp.to(torch.float)
+        #print("value.shape")
+        #print(self.tmp.shape)
+        #return self.tmp.to(torch.float)
+        #print("self.gamma")
+        #print(self.gamma)
+        
+        #print("value_function ***** start")
+        singlebatch = (self.gamma).reshape(1)
+        #print(singlebatch)
+        #print(self.batch)
+        multibatch = singlebatch.expand(self.batch)
+        #print(multibatch)
+        #print("value_function ***** end")
+        return multibatch
 
 ModelCatalog.register_custom_model("UN", UN)

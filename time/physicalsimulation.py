@@ -236,13 +236,15 @@ class PhysicSimulation:
         else:
             if not "uni" in self.mode:
                 x = torch.Tensor(x).cuda(0)
+                x = x.expand(self.WIDTH * self.HEIGHT)
                 x = x - torch.min(x)
                 x = torch.flatten(x).type(torch.float64)
                 N = torch.sum(x)
                 temp = self.spp * self.WIDTH * self.HEIGHT
                 x = x * temp / N
                 N = temp
-                s = self.round_retain_sum(x, N)
+                #s = self.round_retain_sum(x, N)
+                s = x.type(torch.int)
             else:
                 s = x
             s[s < 0] = -1

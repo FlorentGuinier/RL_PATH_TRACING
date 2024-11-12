@@ -77,7 +77,9 @@ def train_ppo_model(
             .resources(num_gpus=1.0, num_cpus_per_worker=64, num_gpus_per_worker=1.0)
             .environment(normalize_actions=False, env=env.CustomEnv, env_config=env_configuration)
             .rollouts(num_envs_per_worker=1, num_rollout_workers=1, rollout_fragment_length=4, no_done_at_end=False)
-            .training(use_critic=True, use_gae=True, use_kl_loss=True, kl_coeff=5e-7, kl_target=5e-8, lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
+            .training(use_critic=True, use_gae=True, use_kl_loss=True, 
+                    kl_coeff=5e-7, kl_target=5e-8, 
+                    lambda_=0.2, clip_param=0.15, grad_clip=4, #appo
                     lr=1e-3, train_batch_size=4, model={"custom_model": "UN"}, #optimizer="adabelief", #generic
                     vtrace_drop_last_ts=False, replay_buffer_num_slots=40, vf_loss_coeff=0.5, entropy_coeff=1e-5 #impala
                     )
