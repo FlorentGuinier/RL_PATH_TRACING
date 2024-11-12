@@ -163,7 +163,7 @@ class UN(TorchModelV2, nn.Module):
                 )
             )
         self.head = nn.Sequential(*(layers[-2:1]))
-        self.head_value = nn.Sequential(*layers[-1:0])
+        self.head_value = nn.Sequential(layers[-1]) # was *layers[-1:0] but this is not valid slice indexing in python
 
     def f(
         self,
