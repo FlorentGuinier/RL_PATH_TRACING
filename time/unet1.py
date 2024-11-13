@@ -165,7 +165,9 @@ class UN(TorchModelV2, nn.Module):
         self.head = nn.Sequential(*(layers[-2:1]))
         self.head_value = nn.Sequential(layers[-1]) # was *layers[-1:0] but this is not valid slice indexing in python
         self.beta = nn.Parameter(torch.Tensor(2))
+        self.beta.data.fill_(0.5)
         self.gamma = nn.Parameter(torch.Tensor(1))
+        self.gamma.data.fill_(0.5)
         print("num_outputs")
         print(num_outputs)
 

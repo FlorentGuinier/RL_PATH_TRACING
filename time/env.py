@@ -215,17 +215,17 @@ class CustomEnv(gym.Env):
             self.mses.append(mse_value)
             self.psnrs.append(psnr_value)
 
-        #reward = 10 ** (
-        #    action[0]
-        #    #new1
-        #)  # We transform the loss, this showed to work better for the learning of the RL agent
-        reward = 10*action[0]
+        reward = 10 ** (
+            new1
+        )  # We transform the loss, this showed to work better for the learning of the RL agent
+        reward *= 10
+
         print(f"reward {reward} action{action}")
         training_logger_writer.add_scalar("metrics/reward", reward, PhysicSimulation.total_step)
         done = self.spec.max_episode_steps <= self.simulation.count
         if self.log_debug:
             print("CustomEnv step - done")
-        return observation.numpy(), reward, done, {}
+        return observation.numpy(), reward.detach().numpy(), done, {}
 
     def reset(self):
         """Resets the agent and the physical simulation. This happens after/before every animation (20 subsequent frames)

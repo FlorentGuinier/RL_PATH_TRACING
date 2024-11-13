@@ -235,16 +235,17 @@ class PhysicSimulation:
             self.observations = Render.apply(x, self)
         else:
             if not "uni" in self.mode:
-                x = torch.Tensor(x).cuda(0)
-                x = x.expand(self.WIDTH * self.HEIGHT)
+                x = torch.Tensor(x).cuda(0)-1.0
+                x1 = x.expand(self.WIDTH * int(self.HEIGHT/2)) #start at 0.5 should be 1
+                x2 = torch.ones(self.WIDTH * int(self.HEIGHT/2)).cuda(0)
+                x = torch.cat((x1,x2))
                 x = x - torch.min(x)
                 x = torch.flatten(x).type(torch.float64)
                 N = torch.sum(x)
                 temp = self.spp * self.WIDTH * self.HEIGHT
                 x = x * temp / N
                 N = temp
-                #s = self.round_retain_sum(x, N)
-                s = x.type(torch.int)
+                s = self.round_retain_sum(x, N)
             else:
                 s = x
             s[s < 0] = -1
@@ -331,6 +332,7 @@ class PhysicSimulation:
                     filename_base = f"images/step{PhysicSimulation.total_step}-image{image_index}-spp{self.spp}"
                     denoised_map = self.denoised[0].to(torch.float).detach().cpu()
                     adaptive_map = (self.s.reshape(1, 720, 720)/8.0).to(torch.float).detach().cpu()
+                    print(self.s.reshape(1, 720, 720)[0,:,0])
                     save(denoised_map,filename_base+"denoised.png")
                     save(adaptive_map,filename_base+"adaptive.png")
 
