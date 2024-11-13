@@ -239,7 +239,8 @@ class PhysicSimulation:
                 x1 = x.expand(self.WIDTH * int(self.HEIGHT/2)) #start at 0.5 should be 1
                 x2 = torch.ones(self.WIDTH * int(self.HEIGHT/2)).cuda(0)
                 x = torch.cat((x1,x2))
-                x = x - torch.min(x)
+                #x = x - torch.min(x)
+                x[x < 0] = 0
                 x = torch.flatten(x).type(torch.float64)
                 N = torch.sum(x)
                 temp = self.spp * self.WIDTH * self.HEIGHT
