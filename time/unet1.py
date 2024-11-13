@@ -203,22 +203,12 @@ class UN(TorchModelV2, nn.Module):
         """    
         out = self.f(input_dict, state, seq_lens)
         self.batch = out.shape[0]
-        out = out.reshape(out.shape[0], -1)
-        temp = torch.nn.Tanh()(out) * 20 - 10  # We want bounded outputs (see paper)
-        #print("forward.shape")
-        #print(temp.shape)
+        #out = out.reshape(out.shape[0], -1)
+        #temp = torch.nn.Tanh()(out) * 20 - 10  # We want bounded outputs (see paper)
         #return temp.to(torch.float), state
-        #return temp.to(torch.float), state
-        #print("self.beta")
-        print(self.beta)
-        singlebatch = (torch.nn.Tanh()(self.beta)*1+1).reshape(1,2)
-        print(singlebatch)
+        singlebatch = (torch.nn.Tanh()(self.beta)+1).reshape(1,2) #range [0-2] with standard deviation of [0-2]
         multibatch = singlebatch.expand(self.batch,2)
-        #range is thus [0-2] with stand deviation of [0-2]
-        #print("forward ***** start")
-        #print(singlebatch)
-        #print(multibatch)
-        #print("forward ***** end")
+        print(singlebatch)
         return multibatch, state
         
 
@@ -230,19 +220,10 @@ class UN(TorchModelV2, nn.Module):
             TensorType: the value function
         """        
         assert self.tmp is not None, "must call forward() first"
-        #print("value.shape")
-        #print(self.tmp.shape)
         #return self.tmp.to(torch.float)
-        #print("self.gamma")
-        #print(self.gamma)
-        
-        #print("value_function ***** start")
         singlebatch = (self.gamma).reshape(1)
         #print(singlebatch)
-        #print(self.batch)
         multibatch = singlebatch.expand(self.batch)
-        #print(multibatch)
-        #print("value_function ***** end")
         return multibatch
 
 ModelCatalog.register_custom_model("UN", UN)
